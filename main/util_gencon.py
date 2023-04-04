@@ -46,6 +46,23 @@ def interpolate_two_images(pl_module, x1, x2, num_samples, spherical=False):
     return interpolate(mu1, mu2, x1, x2, pl_module, num_samples, spherical)
 
 
+def interpolate_two_radnom_samples(
+    pl_module, batch_size, num_samples, spherical, latent_size=1024
+):
+    mu1 = torch.randn([batch_size, latent_size, 1, 1])
+    mu2 = torch.randn([batch_size, latent_size, 1, 1])
+    return interpolate(mu1, mu2, None, None, pl_module, num_samples + 2, spherical)
+
+
+def interpolate_vec_attr(pl_module, x1, vec, num_samples, spherical=False):
+    mu1, _ = pl_module.encode(x1)
+    mu2 = mu1 + vec
+
+    print(torch.mean((mu1 - mu2) ** 2))
+
+    return interpolate(mu1, mu2, None, None, pl_module, num_samples, spherical)
+
+
 def get_attr_indices(attribute_name, n_samples):
     lines = load_celeba_attributes()
 
