@@ -1,7 +1,7 @@
 # DDPM config used for DDPM training
 ddpm:
   data:
-    root: ???
+    root: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/data/CelebAMask-HQ/"
     name: "celebamaskhq"
     image_size: 128
     hflip: True
@@ -36,7 +36,8 @@ ddpm:
     lr: 2e-5
     restore_path: ""
     vae_chkpt_path: ???
-    results_dir: ???
+    results_base: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/DiffuseVAE/results"
+    results_dir: "ddpm_celebaHQ"
     workers: 16
     grad_clip: 1.0
     n_anneal_steps: 5000
@@ -47,7 +48,7 @@ ddpm:
 # VAE config used for VAE training
 vae:
   data:
-    root: ???
+    root: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/data/CelebAMask-HQ/"
     name: "celebamaskhq"
     image_size: 128
     n_channels: 3
@@ -70,7 +71,8 @@ vae:
     optimizer: "Adam"
     lr: 1e-4
     restore_path: ""
-    results_dir: ???
+    results_base: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/DiffuseVAE/results"
+    results_dir: "vae_celebaHQ"
     workers: 2
     chkpt_prefix: ""
     alpha: 1.0

@@ -1,7 +1,7 @@
 # DDPM config used for DDPM training
 ddpm:
   data:
-    root: ???
+    root: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/data/CelebAMask-HQ/"
     name: "celebamaskhq"
     image_size: 128
     hflip: True
@@ -49,7 +49,7 @@ ddpm:
 # VAE config used for VAE training
 vae:
   data:
-    root: ???
+    root: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/data/CelebAMask-HQ/"
     name: "celebamaskhq"
     image_size: 128
     n_channels: 3
