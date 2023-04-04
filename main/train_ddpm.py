@@ -17,6 +17,18 @@ from util import configure_device, get_dataset
 logger = logging.getLogger(__name__)
 
 
+def create_incremented_directory(path):
+    counter = 0
+    original_path = path
+
+    while os.path.exists(path):
+        counter += 1
+        path = f"{original_path}_{counter}"
+
+    print(f"############### {path} ###############")
+    return path
+
+
 def __parse_str(s):
     split = s.split(",")
     return [int(s) for s in split if s != "" and s is not None]
@@ -117,7 +129,11 @@ def train(config):
         train_kwargs["resume_from_checkpoint"] = restore_path
 
     # Setup callbacks
-    results_dir = config.training.results_dir
+    results_dir = os.path.join(
+        config.training.results_base, config.training.results_dir
+    )
+
+    results_dir = create_incremented_directory(results_dir)
     chkpt_callback = ModelCheckpoint(
         dirpath=os.path.join(results_dir, "checkpoints"),
         filename=f"ddpmv2-{config.training.chkpt_prefix}" + "-{epoch:02d}-{loss:.4f}",
