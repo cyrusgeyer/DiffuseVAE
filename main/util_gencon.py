@@ -4,6 +4,22 @@ from models.vae import VAE
 from util import get_dataset
 import yaml
 import pandas as pd
+import torchvision.transforms as ttf
+
+
+def create_transforms():
+    transforms_1 = torch.nn.Sequential(
+        ttf.RandomAdjustSharpness(5.0, p=0.5),
+        ttf.RandomHorizontalFlip(p=0.0),
+    )
+
+    transforms_2 = torch.nn.Sequential(
+        ttf.GaussianBlur(7, sigma=(0.1, 1.4)),
+        ttf.RandomHorizontalFlip(p=1.0),
+    )
+
+    scripted_transforms = [torch.jit.script(t) for t in [transforms_1, transforms_2]]
+    return scripted_transforms
 
 
 def interpolate(mu1, mu2, x1, x2, pl_module, num_samples, spherical):

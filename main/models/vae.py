@@ -2,6 +2,11 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from gencon.sample import reparametrize_non_diag
+from gencon.contrastive_loss import NT_Xent
+from util_gencon import create_transforms
+import torchvision.transforms as ttf
+import numpy as np
 
 
 def parse_layer_string(s):
@@ -196,6 +201,11 @@ class VAE(pl.LightningModule):
         dec_channel_str,
         alpha=1.0,
         lr=1e-4,
+        contrastive=False,
+        c_weight=1.0,
+        max_c_weight=10.0,
+        decay_c_rate=1e-5,
+        batch_size=16,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -206,12 +216,26 @@ class VAE(pl.LightningModule):
         self.dec_channel_str = dec_channel_str
         self.alpha = alpha
         self.lr = lr
+        self.contrastive = contrastive
+
+        self.batch_size = batch_size
+        self.mse_loss = nn.MSELoss(reduction="sum")
 
         # Encoder architecture
         self.enc = Encoder(self.enc_block_str, self.enc_channel_str)
 
         # Decoder Architecture
         self.dec = Decoder(self.input_res, self.dec_block_str, self.dec_channel_str)
+
+        # Contrastive tools:
+        if self.contrastive:
+            self.c_weight = lambda step: c_weight + (max_c_weight - c_weight) * np.exp(
+                -decay_c_rate * step
+            )
+
+            self.nt_xent = NT_Xent(self.batch_size, 0.5)
+
+        self.scripted_transforms = create_transforms()
 
     def encode(self, x):
         mu, logvar = self.enc(x)
@@ -223,6 +247,8 @@ class VAE(pl.LightningModule):
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
+        if self.contrastive:
+            return reparametrize_non_diag(mu, std, eps)
         return mu + eps * std
 
     def compute_kl(self, mu, logvar):
@@ -242,26 +268,72 @@ class VAE(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x = batch
+        self.last_batch = batch
 
-        # Encoder
-        mu, logvar = self.encode(x)
+        if self.contrastive:
+            transforms = [t(x) for t in self.scripted_transforms]
 
-        # Reparameterization Trick
-        z = self.reparameterize(mu, logvar)
+            recons_loss = 0
+            kl_loss = 0
+            z = []
 
-        # Decoder
-        decoder_out = self.decode(z)
+            for x in transforms:
+                # Encoder
+                mu, logvar = self.encode(x)
 
-        # Compute loss
-        mse_loss = nn.MSELoss(reduction="sum")
-        recons_loss = mse_loss(decoder_out, x)
-        kl_loss = self.compute_kl(mu, logvar)
-        self.log("Recons Loss", recons_loss, prog_bar=True)
-        self.log("Kl Loss", kl_loss, prog_bar=True)
+                # Reparameterization Trick
+                _z = self.reparameterize(mu, logvar)
+                z.append(torch.squeeze(_z))
 
-        total_loss = recons_loss + self.alpha * kl_loss
-        self.log("Total Loss", total_loss)
-        return total_loss
+                # Decoder
+                decoder_out = self.decode(_z)
+
+                # Compute loss
+                recons_loss += self.mse_loss(decoder_out, x)
+                kl_loss += self.compute_kl(mu, logvar)
+
+            recons_loss /= 2 * self.batch_size
+            kl_loss /= 2 * self.batch_size
+
+            c_loss = self.nt_xent(z[0], z[1])
+
+            total_loss = (
+                recons_loss
+                + self.alpha * kl_loss
+                + self.c_weight(self.global_step) * c_loss
+            )
+
+            self.log("Recons Loss", recons_loss, prog_bar=True)
+            self.log("Kl Loss", kl_loss, prog_bar=True)
+            self.log("C Loss", c_loss, prog_bar=True)
+            self.log("Total Loss", total_loss)
+            self.log("c_weight", self.c_weight(self.global_step))
+
+            return total_loss
+
+        else:
+            # Encoder
+            mu, logvar = self.encode(x)
+
+            # Reparameterization Trick
+            z = self.reparameterize(mu, logvar)
+
+            # Decoder
+            decoder_out = self.decode(z)
+
+            # Compute loss
+            recons_loss = self.mse_loss(decoder_out, x)
+            kl_loss = self.compute_kl(mu, logvar)
+
+            recons_loss /= self.batch_size
+            kl_loss /= self.batch_size
+
+            self.log("Recons Loss", recons_loss, prog_bar=True)
+            self.log("Kl Loss", kl_loss, prog_bar=True)
+
+            total_loss = recons_loss + self.alpha * kl_loss
+            self.log("Total Loss", total_loss)
+            return total_loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -275,14 +347,18 @@ if __name__ == "__main__":
     dec_block_config_str = "1x1,1u4,1t4,4x2,4u2,4t8,8x2,8u2,8t16,16x6,16u2,16t32,32x2,32u2,32t64,64x2,64u2,64t128,128x1"
     dec_channel_config_str = "128:64,64:64,32:128,16:128,8:256,4:512,1:1024"
 
+    input_res = 128
+
     vae = VAE(
+        input_res,
         enc_block_config_str,
         dec_block_config_str,
         enc_channel_config_str,
         dec_channel_config_str,
+        contrastive=True,
     )
 
-    sample = torch.randn(1, 3, 128, 128)
+    sample = torch.randn(16, 3, input_res, input_res)
     out = vae.training_step(sample, 0)
     print(vae)
     print(out.shape)

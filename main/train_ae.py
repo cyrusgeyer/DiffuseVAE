@@ -56,6 +56,11 @@ def train(config):
         dec_channel_str=config.model.dec_channel_config,
         lr=config.training.lr,
         alpha=config.training.alpha,
+        contrastive=config.training.contrastive,
+        batch_size=batch_size,
+        c_weight=config.training.c_weight,
+        max_c_weight=config.training.max_c_weight,
+        decay_c_rate=config.training.decay_c_rate,
     )
 
     # Trainer
