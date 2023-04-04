@@ -20,7 +20,8 @@ class CelebAMaskHQDataset(Dataset):
         self.images = []
 
         img_path = os.path.join(self.root, "CelebA-HQ-img")
-        for img in tqdm(os.listdir(img_path)):
+        files = sorted(os.listdir(img_path), key=lambda x: int(x.split(".")[0]))
+        for img in tqdm(files):
             self.images.append(os.path.join(img_path, img))
 
         # Subsample the dataset (if enabled)
