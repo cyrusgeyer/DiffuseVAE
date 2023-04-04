@@ -8,6 +8,7 @@ from omegaconf import OmegaConf
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.data import DataLoader
+from models.callbacks import SampleImages
 
 # from models.vae import VAE
 from models.vae import VAE
@@ -61,10 +62,12 @@ def train(config):
         save_on_train_epoch_end=True,
     )
 
+    image_callback = SampleImages(log_dir=os.path.join(results_dir, "images"))
+
     train_kwargs["default_root_dir"] = results_dir
     train_kwargs["max_epochs"] = config.training.epochs
     train_kwargs["log_every_n_steps"] = config.training.log_step
-    train_kwargs["callbacks"] = [chkpt_callback]
+    train_kwargs["callbacks"] = [chkpt_callback, image_callback]
 
     device = config.training.device
     loader_kws = {}
@@ -97,7 +100,7 @@ def train(config):
 
     logger.info(f"Running Trainer with kwargs: {train_kwargs}")
     trainer = pl.Trainer(**train_kwargs)
-    trainer.fit(vae, train_dataloader=loader)
+    trainer.fit(vae, train_dataloaders=loader)
 
 
 if __name__ == "__main__":

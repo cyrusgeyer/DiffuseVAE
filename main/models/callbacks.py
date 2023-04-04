@@ -7,6 +7,55 @@ from pytorch_lightning.callbacks import BasePredictionWriter
 from torch import Tensor
 from torch.nn import Module
 from util import save_as_images, save_as_np
+from util_gencon import interpolate_two_images
+import torchvision.transforms as ttf
+import torchvision.utils as vutils
+
+
+class SampleImages(Callback):
+    def __init__(self, log_dir, num_samples=24) -> None:
+        super().__init__()
+        self.log_dir = log_dir
+        self.num_samples = num_samples
+        self.frq = 200
+        self.last_step = -self.frq
+
+        self.t = torch.jit.script(
+            torch.nn.Sequential(
+                ttf.RandomHorizontalFlip(p=1.0),
+            )
+        )
+
+    def on_train_batch_end(
+        self,
+        trainer: Trainer,
+        pl_module: LightningModule,
+        outputs: Sequence,
+        batch: Sequence,
+        batch_idx: int,
+        dataloader_idx: int,
+    ) -> None:
+        if not trainer.is_global_zero:
+            return
+        if trainer.global_step - self.last_step < self.frq:
+            return
+        self.last_step = trainer.global_step
+
+        x1 = pl_module.last_batch
+        x2 = self.t(x1)
+        imgs = interpolate_two_images(pl_module, x1, x2, self.num_samples)
+
+        dir_path = os.path.join(self.log_dir, "Samples")
+        os.makedirs(dir_path, exist_ok=True)
+        vutils.save_image(
+            imgs.cpu().data,
+            os.path.join(
+                dir_path,
+                f"Epoch_{pl_module.current_epoch}_Step_{pl_module.global_step}.png",
+            ),
+            normalize=True,
+            nrow=self.num_samples + 2,
+        )
 
 
 class EMAWeightUpdate(Callback):
