@@ -76,3 +76,8 @@ vae:
     workers: 2
     chkpt_prefix: ""
     alpha: 1.0
+    contrastive: False
+    c_weight: 1.0
+    max_c_weight: 10.0
+    decay_c_rate: 0.00005
+    accumulate_grad_batches: 1
