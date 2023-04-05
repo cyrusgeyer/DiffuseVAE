@@ -4,9 +4,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 from gencon.sample import reparametrize_non_diag
 from gencon.contrastive_loss import NT_Xent
-from util_gencon import create_transforms
 import torchvision.transforms as ttf
 import numpy as np
+import torchvision.transforms as ttf
+
+
+def create_transforms():
+    transforms_1 = torch.nn.Sequential(
+        ttf.RandomAdjustSharpness(5.0, p=0.5),
+        ttf.RandomHorizontalFlip(p=0.0),
+    )
+
+    transforms_2 = torch.nn.Sequential(
+        ttf.GaussianBlur(7, sigma=(0.1, 1.4)),
+        ttf.RandomHorizontalFlip(p=1.0),
+    )
+
+    scripted_transforms = [torch.jit.script(t) for t in [transforms_1, transforms_2]]
+    return scripted_transforms
 
 
 def parse_layer_string(s):
