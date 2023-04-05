@@ -62,9 +62,9 @@ vae:
   training:
     seed: 0
     fp16: False
-    batch_size: 16
-    epochs: 300
-    log_step: 1
+    batch_size: 4
+    epochs: 500
+    log_step: 50
     device: "gpu:0"
     chkpt_interval: 1
     optimizer: "Adam"

@@ -1,4 +1,18 @@
 # # CelebAMaskHQ training
+
+# Contrastive learning script:
+# python main/train_ae.py +dataset=celebamaskhq128/train \
+#                      dataset.vae.data.root='/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/data/CelebAMask-HQ/' \
+#                      dataset.vae.data.name='celebamaskhq' \
+#                      dataset.vae.training.device=\'gpu:0,1,3\' \
+#                      dataset.vae.training.results_dir=\'vae_celebaHQ_contrastive_300\' \
+#                      dataset.vae.training.workers=2 \
+#                      dataset.vae.training.chkpt_prefix=\'cmhq128_alpha=1.0\' \
+#                      dataset.vae.training.contrastive=True \
+#                      dataset.vae.training.c_weight=300 \
+#                      dataset.vae.training.max_c_weight=5000 \
+#                      dataset.vae.training.decay_c_rate=0.0001 \
+
 # python main/train_ae.py +dataset=celebamaskhq128/train \
 #                      dataset.vae.data.root='/data1/kushagrap20/datasets/CelebAMask-HQ/' \
 #                      dataset.vae.data.name='celebamaskhq' \
