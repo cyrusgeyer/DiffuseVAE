@@ -36,7 +36,6 @@ ddpm:
     lr: 2e-5
     restore_path: ""
     vae_chkpt_path: ???
-    results_base: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/DiffuseVAE/results"
     results_dir: "ddpm_celebaHQ"
     workers: 16
     grad_clip: 1.0
@@ -71,7 +70,6 @@ vae:
     optimizer: "Adam"
     lr: 1e-4
     restore_path: ""
-    results_base: "/cluster/work/buhmann/icu_rs/geyerr/PODVAE/GenCon/DiffuseVAE/results"
     results_dir: "vae_celebaHQ"
     workers: 2
     chkpt_prefix: ""
