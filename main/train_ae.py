@@ -17,18 +17,6 @@ from util import configure_device, get_dataset
 logger = logging.getLogger(__name__)
 
 
-def create_incremented_directory(path):
-    counter = 0
-    original_path = path
-
-    while os.path.exists(path):
-        counter += 1
-        path = f"{original_path}_{counter}"
-
-    print(f"############### {path} ###############")
-    return path
-
-
 @hydra.main(config_path="configs")
 def train(config):
     # Get config and setup
@@ -69,12 +57,6 @@ def train(config):
     if restore_path is not None:
         # Restore checkpoint
         train_kwargs["resume_from_checkpoint"] = restore_path
-
-    results_dir = os.path.join(
-        config.training.results_base, config.training.results_dir
-    )
-
-    results_dir = create_incremented_directory(results_dir)
 
     results_dir = config.training.results_dir
     chkpt_callback = ModelCheckpoint(
