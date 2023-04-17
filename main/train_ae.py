@@ -49,6 +49,11 @@ def train(config):
         c_weight=config.training.c_weight,
         max_c_weight=config.training.max_c_weight,
         decay_c_rate=config.training.decay_c_rate,
+        masking_prob=config.training.masking_prob,
+        square=config.training.square,
+        pid=config.training.pid,
+        dpi=config.training.dpi,
+        c_max=config.training.c_max,
     )
 
     # Trainer
@@ -74,19 +79,7 @@ def train(config):
     train_kwargs["log_every_n_steps"] = config.training.log_step
     train_kwargs["callbacks"] = [chkpt_callback, image_callback]
 
-    device = config.training.device
     loader_kws = {}
-    if device.startswith("gpu"):
-        _, devs = configure_device(device)
-        train_kwargs["gpus"] = devs
-
-        # Disable find_unused_parameters when using DDP training for performance reasons
-        from pytorch_lightning.plugins import DDPPlugin
-
-        train_kwargs["plugins"] = DDPPlugin(find_unused_parameters=False)
-        loader_kws["persistent_workers"] = True
-    elif device == "tpu":
-        train_kwargs["tpu_cores"] = 8
 
     # Half precision training
     if config.training.fp16:
