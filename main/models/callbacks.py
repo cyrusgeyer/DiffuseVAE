@@ -10,6 +10,7 @@ from util import save_as_images, save_as_np
 from util_gencon import interpolate_two_images
 import torchvision.transforms as ttf
 import torchvision.utils as vutils
+import gpustat
 
 
 class SampleImages(Callback):
@@ -20,11 +21,7 @@ class SampleImages(Callback):
         self.frq = 200
         self.last_step = -self.frq
 
-        self.t = torch.jit.script(
-            torch.nn.Sequential(
-                ttf.RandomHorizontalFlip(p=1.0),
-            )
-        )
+        self.t = torch.nn.Sequential(ttf.RandomHorizontalFlip(p=1.0))
 
     def on_train_batch_end(
         self,
@@ -40,6 +37,12 @@ class SampleImages(Callback):
         if trainer.global_step - self.last_step < self.frq:
             return
         self.last_step = trainer.global_step
+
+        gpu_stats = gpustat.GPUStatCollection.new_query()
+        for gpu in gpu_stats:
+            print(
+                f"GPU ID: {gpu.index}, Utilization: {gpu.utilization}%, Memory Used: {gpu.memory_used} MiB, Memory Total: {gpu.memory_total} MiB"
+            )
 
         x1 = pl_module.last_batch
         x2 = self.t(x1)
