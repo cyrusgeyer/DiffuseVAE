@@ -62,7 +62,7 @@ vae:
   training:
     seed: 0
     fp16: False
-    batch_size: 4
+    batch_size: 32
     epochs: 500
     log_step: 50
     device: "gpu:0"
@@ -71,7 +71,7 @@ vae:
     lr: 1e-4
     restore_path: ""
     results_dir: "vae_celebaHQ"
-    workers: 2
+    workers: 10
     chkpt_prefix: ""
     alpha: 1.0
     contrastive: False
@@ -79,3 +79,8 @@ vae:
     max_c_weight: 10.0
     decay_c_rate: 0.00005
     accumulate_grad_batches: 1
+    masking_prob: 0
+    square: 0
+    pid: False
+    dpi: False
+    c_max: 130
